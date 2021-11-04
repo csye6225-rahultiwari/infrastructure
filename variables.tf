@@ -41,6 +41,10 @@ variable "rds_username" {
 
 }
 
+// variable "port" {
+//   type = string
+// }
+
 
 variable "rds_password" {
   type = string
@@ -68,8 +72,20 @@ variable "ami" {
 }
 
 
-// variable "key_name" {
-//   type =string
+variable "key_name" {
+  type = string
+}
+
+variable "access_key" {
+  type = string
+}
+
+variable "secret_key" {
+  type = string
+}
+
+// variable "rds_hostname" {
+//   type = string
 // }
 
 
