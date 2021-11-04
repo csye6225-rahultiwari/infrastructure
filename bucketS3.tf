@@ -5,13 +5,24 @@ locals {
   acl           = "private"
   sse_algorithm = "aws:kms"
   storage_class = "STANDARD_IA"
-
+  block_public_acls = true
+  block_public_policy = true
+  restrict_public_buckets = true
+  ignore_public_acls = true
 }
 resource "random_string" "suffix"{
     length = 10
     upper = false
     lower = true
     special = false
+}
+
+resource "aws_s3_bucket_public_access_block" "blockAccess" {
+  bucket = aws_s3_bucket.csye6225_bucket.id
+  block_public_acls   = local.block_public_acls
+  block_public_policy = local.block_public_policy
+  restrict_public_buckets = local.restrict_public_buckets
+  ignore_public_acls = local.ignore_public_acls
 }
 
 
