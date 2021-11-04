@@ -6,7 +6,6 @@ locals {
   sse_algorithm = "aws:kms"
   storage_class = "STANDARD_IA"
 
-
 }
 resource "random_string" "suffix"{
     length = 10
@@ -17,7 +16,7 @@ resource "random_string" "suffix"{
 
 
 resource "aws_s3_bucket" "csye6225-bucket" {
-  bucket        = "${random_string.suffix.result}"var.bucket
+  bucket        = var.bucket
   acl           = local.acl
   force_destroy = local.force_destroy
   versioning {
@@ -27,6 +26,7 @@ resource "aws_s3_bucket" "csye6225-bucket" {
     Name        = "csye6225 s3 Bucket"
     Environment = "DEV"
   }
+
 
   server_side_encryption_configuration {
     rule {

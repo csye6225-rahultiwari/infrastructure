@@ -13,3 +13,12 @@ output "route_table_id" {
 output "db_endpoint" {
   value = aws_db_instance.db.endpoint
 }
+
+output "rds_hostname" {
+  value = aws_db_instance.db.address
+}
+
+output "rds_port" {
+  value = aws_db_instance.db.port
+}
+
