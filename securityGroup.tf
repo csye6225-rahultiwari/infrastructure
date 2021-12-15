@@ -16,13 +16,14 @@ resource "aws_security_group" "webserver" {
     from_port   = 443
     to_port     = 443
     cidr_blocks = ["0.0.0.0/0"]
+    security_groups    = ["${aws_security_group.lb_securitygroup.id}"]
     protocol    = "tcp"
   }
 
   ingress {
     description = "SSH Access"
     from_port   = 22
-    to_port     = 22 
+    to_port     = 22
     cidr_blocks = ["0.0.0.0/0"]
     protocol    = "tcp"
   }
@@ -31,6 +32,7 @@ resource "aws_security_group" "webserver" {
     from_port   = 8080
     to_port     = 8080
     cidr_blocks = ["0.0.0.0/0"]
+    security_groups    = ["${aws_security_group.lb_securitygroup.id}"]
     protocol    = "tcp"
   }
   egress {
@@ -59,14 +61,34 @@ resource "aws_security_group" "database" {
     security_groups = ["${aws_security_group.webserver.id}"]
   }
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    cidr_blocks     = ["0.0.0.0/0"]
     security_groups = ["${aws_security_group.webserver.id}"]
   }
   tags = {
     Name = "database"
   }
 
+}
+
+resource "aws_security_group" "lb_securitygroup" {
+  name        = "lb_securitygroup"
+  description = "Load Balancer Security Group"
+  vpc_id      = "${aws_vpc.vpc.id}"
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }

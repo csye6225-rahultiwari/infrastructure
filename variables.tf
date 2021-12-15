@@ -88,6 +88,23 @@ variable "secret_key" {
 //   type = string
 // }
 
+variable "accountId" {
+  type        = string
+  description = "account id"
+  //default = "us-east-1"
+}
 
+variable "appName" {
+  type        = string
+  description = "app name for code deploy"
+  //default = "us-east-1"
+}
 
+variable "codedeploy_bucket" {
+  type = string
+}
 
+variable "domain_name" {
+  type = string
+  description = "domain name"
+}
