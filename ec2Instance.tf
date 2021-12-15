@@ -10,9 +10,9 @@ resource "aws_instance" "csye6225-ec2-instance" {
   ami                     = var.ami
   instance_type           = "t2.micro"
   disable_api_termination = local.disable_api_termination
-  iam_instance_profile = "${aws_iam_instance_profile.csye6225_profile.name}"
-  key_name = var.key_name
-  user_data = <<EOF
+  iam_instance_profile    = aws_iam_instance_profile.csye6225_profile.name
+  key_name                = var.key_name
+  user_data               = <<EOF
 #!/bin/bash
 sudo touch /home/ubuntu/.env
 sudo echo "RDS_USERNAME=\"${aws_db_instance.db.username}\"" >> /home/ubuntu/.env

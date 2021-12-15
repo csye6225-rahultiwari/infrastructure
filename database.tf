@@ -10,9 +10,9 @@ locals {
 }
 
 resource "aws_db_instance" "db" {
-  allocated_storage      = local.allocated_storage
-  max_allocated_storage  = local.max_allocated_storage
-  storage_type           = "gp2"
+  allocated_storage     = local.allocated_storage
+  max_allocated_storage = local.max_allocated_storage
+  storage_type          = "gp2"
   // endpoint               = aws_db_instance.db.endpoint
   engine                 = var.engine
   engine_version         = var.engine_version
