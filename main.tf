@@ -180,28 +180,20 @@ resource "aws_launch_configuration" "launch_config" {
     volume_type           = "gp2"
     delete_on_termination = "true"
   }
-    user_data = <<-EOFS
+  depends_on = [aws_s3_bucket.csye6225-bucket,aws_db_instance.db]
+    user_data               = <<EOF
 #!/bin/bash
-sudo mkdir /home/ubuntu/webapp
-sudo chmod 755 /home/ubuntu/webapp
-sudo mkdir /home/ubuntu/webapp/config_log
-cat > /home/ubuntu/webapp/config_log/config.json << EOF
-{
-"development": {
-    "RDS_USERNAME": "${aws_db_instance.db.username}",
-    "RDS_PASSWORD": "${aws_db_instance.db.password}",
-    "RDS_DB_NAME": "${aws_db_instance.db.name}",
-    "RDS_HOSTNAME": "${aws_db_instance.db.address}",
-    "dialect": "postgres",
-    "operatorsAliases": false,
-    "RDS_AWS_BUCKET": "${aws_s3_bucket.csye6225-bucket.bucket}",
-    "AWS_BUCKET_REGION": "${var.region}",
-    "AWS_ACCESS_KEY": "${var.access_key}",
-    "AWS_SECRET_KEY": "${var.secret_key}"
-  }
-}
-EOF
-EOFS
+sudo touch /home/ubuntu/.env
+sudo echo "RDS_USERNAME=\"${aws_db_instance.db.username}\"" >> /home/ubuntu/.env
+sudo echo "RDS_PASSWORD=\"${aws_db_instance.db.password}\"" >> /home/ubuntu/.env
+sudo echo "RDS_HOSTNAME=\"${aws_db_instance.db.address}\"" >> /home/ubuntu/.env
+sudo echo "RDS_AWS_BUCKET=\"${aws_s3_bucket.csye6225-bucket.bucket}\"" >> /home/ubuntu/.env
+sudo echo "RDS_ENDPOINT=\"${aws_db_instance.db.endpoint}\"" >> /home/ubuntu/.env
+sudo echo "RDS_DB_NAME=\"${aws_db_instance.db.name}\"" >> /home/ubuntu/.env
+sudo echo "AWS_ACCESS_KEY=\"${var.access_key}\"" >> /home/ubuntu/.env
+sudo echo "AWS_SECRET_KEY=\"${var.secret_key}\"" >> /home/ubuntu/.env
+sudo echo "AWS_BUCKET_REGION=\"${var.region}\"" >> /home/ubuntu/.env
+  EOF
 
   lifecycle {
     create_before_destroy = true
@@ -225,8 +217,8 @@ resource "aws_autoscaling_group" "auto_scale_group" {
 
 
   tag {
-    key                 = "cicd"
-    value               = "codedeploy"
+    key                 = "Name"
+    value               = "autoscaling-codedeploy"
     propagate_at_launch = true
   }
 }
@@ -311,25 +303,29 @@ resource "aws_iam_role_policy_attachment" "cloudwatchadmin-ec2-attach" {
 resource "aws_lb" "application_load_balancer" {
   name               = "webapp-load-balancer"
   load_balancer_type = "application"
+  internal = false
   security_groups    = ["${aws_security_group.lb_securitygroup.id}"]
-  subnets            = [element(aws_subnet.public-subnets.*.id, 1),element(aws_subnet.public-subnets.*.id, 2)]
+  subnets            = aws_subnet.public-subnets.*.id
+  ip_address_type            = "ipv4"
+  enable_deletion_protection = false
 }
 
 resource "aws_lb_target_group" "target_group" {
   name     = "webapp-target-group"
-  port     = 8080
+  port     = "8080"
   protocol = "HTTP"
-  stickiness {    
-    type            = "lb_cookie"    
-    cookie_duration = 1800    
-    enabled         = true 
-  }
+  
   health_check {
-  interval = 10
-  path = "/healthCheck"
+    healthy_threshold   = 3
+    unhealthy_threshold = 5
+    timeout             = 5
+    interval            = 30
+    path                = "/healthCheck"
+    port                = "8080"
+    matcher             = "200"
 }  
   vpc_id   = "${aws_vpc.vpc.id}"
-  deregistration_delay = 5
+ 
 }
 
 resource "aws_lb_listener" "load_balancer_listener" {
@@ -349,30 +345,24 @@ resource "aws_autoscaling_attachment" "autoscalinggroup_attachment" {
   alb_target_group_arn   = "${aws_lb_target_group.target_group.arn}"
 }
 
-// data "aws_route53_zone" "selected" {
-//   name         = var.domain_name
-//   private_zone = false
-// }
+data "aws_route53_zone" "selected" {
+  name         = var.domain_name
 
-// data "aws_instance" "csye6225-ec2-instance" {
-//   filter {
-//     name   = "tag:Name"
-//     values = ["csye6225-ec2-instance"]
-//   }
-// }
+}
 
 
-// resource "aws_route53_record" "www" {
-//   zone_id = data.aws_route53_zone.selected.zone_id
-//   name    = data.aws_route53_zone.selected.name
-//   type    = "A"
-//   records = ["${data.aws_instance.csye6225-ec2-instance.public_ip}"]
-//   alias {
-//     name                   = "${aws_lb.application_load_balancer.dns_name}"
-//     zone_id                = "${aws_lb.application_load_balancer.zone_id}"
-//     evaluate_target_health = true
-//   }
-// }
+
+resource "aws_route53_record" "www" {
+  zone_id = data.aws_route53_zone.selected.zone_id
+  name    = data.aws_route53_zone.selected.name
+  type    = "A"
+  
+  alias {
+    name                   = aws_lb.application_load_balancer.dns_name
+    zone_id                = aws_lb.application_load_balancer.zone_id
+    evaluate_target_health = true
+  }
+}
 
 resource "aws_codedeploy_app" "code_deploy_app" {
   compute_platform = "Server"
