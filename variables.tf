@@ -108,3 +108,7 @@ variable "domain_name" {
   type = string
   description = "domain name"
 }
+
+variable "serverless_bucket" {
+  type = string
+}

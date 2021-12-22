@@ -28,4 +28,22 @@ resource "aws_db_instance" "db" {
   storage_encrypted      = local.storage_encrypted
   parameter_group_name   = aws_db_parameter_group.rds.name
   depends_on             = [aws_db_parameter_group.rds]
+  availability_zone = "us-east-1a"
+}
+
+resource "aws_db_instance" "rds_replica" {
+    depends_on = [aws_db_instance.db]
+    identifier = "replica-csye6225"
+    engine = var.engine
+    auto_minor_version_upgrade = true
+    engine_version = var.engine_version
+    instance_class = "db.t3.micro"
+    name = "read_replica_indentifier"
+    // multi_az = true
+    skip_final_snapshot = true
+    publicly_accessible = false
+    backup_retention_period = 5
+    replicate_source_db = aws_db_instance.db.id
+    // db_subnet_group_name = aws_db_subnet_group.replica_awsDbSubnetGrp.name
+    availability_zone = "us-east-1b"
 }

@@ -59,3 +59,22 @@ resource "aws_s3_bucket" "csye6225-bucket" {
     }
   }
 }
+
+resource "aws_s3_bucket" "serverless_bucket" {
+  bucket = var.serverless_bucket
+  acl = "private"
+  force_destroy = true
+  lifecycle_rule {
+    id = "log"
+    enabled = true
+    prefix = "log/"
+    tags = {
+    rule = "log"
+    autoclean = "true"
+    }
+    transition {
+    days = 30
+    storage_class = "STANDARD_IA"
+    }
+}
+}
